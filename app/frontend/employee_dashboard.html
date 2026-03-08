@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard - AI HR Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-light: #f9fafb;
+            --glass: rgba(255, 255, 255, 0.9);
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: #1f2937;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .dashboard-card {
+            background: var(--glass);
+            backdrop-filter: blur(8px);
+            border: 1px solid #e5e7eb;
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        #chat-container {
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 1.25rem;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        }
+
+        .message-user {
+            align-self: flex-end;
+            background: var(--primary);
+            color: white;
+            border-radius: 1.25rem 1.25rem 0 1.25rem;
+            padding: 0.8rem 1.2rem;
+            margin-bottom: 0.75rem;
+            max-width: 80%;
+        }
+
+        .message-bot {
+            align-self: flex-start;
+            background: #f3f4f6;
+            color: #1f2937;
+            border-radius: 1.25rem 1.25rem 1.25rem 0;
+            padding: 0.8rem 1.2rem;
+            margin-bottom: 0.75rem;
+            max-width: 80%;
+            border: 1px solid #e5e7eb;
+        }
+
+        /* Voice AI pulse animation */
+        @keyframes voice-pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.5);
+                opacity: 0.1;
+            }
+
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        .voice-ring {
+            position: absolute;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: voice-pulse 2s infinite;
+        }
+
+        #voice-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .voice-active #voice-overlay {
+            display: flex;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+    <nav
+        class="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                <i class="fas fa-robot text-xl"></i>
+            </div>
+            <h1 class="text-xl font-bold text-gray-800 tracking-tight">AI HR Assistant</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3 px-3 py-1.5 bg-gray-50 rounded-xl border border-gray-100">
+                <i class="fas fa-volume-up text-indigo-500 text-xs"></i>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="voice-toggle" class="sr-only peer">
+                    <div
+                        class="w-7 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-600">
+                    </div>
+                    <span class="ml-2 text-[9px] font-black text-gray-500 uppercase tracking-widest">Voice AI</span>
+                </label>
+            </div>
+            <div class="flex flex-col items-end cursor-pointer hover:bg-gray-50 rounded-xl p-2 transition-colors"
+                onclick="openProfileModal()">
+                <div class="flex items-center gap-2">
+                    <span id="user-display-name" class="font-bold text-gray-800 text-sm">Employee</span>
+                    <i class="fas fa-chevron-down text-gray-400 text-[10px]"></i>
+                </div>
+                <span id="user-role-label"
+                    class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Employee Portal</span>
+            </div>
+            <button onclick="logout()"
+                class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
+                <i class="fas fa-sign-out-alt text-gray-400 hover:text-red-500"></i>
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto p-6">
+        <div class="w-full">
+            <div id="chat-container">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="relative flex h-2 w-2">
+                            <span
+                                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                        <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">AI HR
+                            Concierge</span>
+                    </div>
+                    <span class="text-[10px] font-bold text-gray-300">End-to-end Encrypted</span>
+                </div>
+
+                <div id="chat-messages"
+                    class="flex-1 overflow-y-auto p-6 flex flex-col space-y-4 bg-[radial-gradient(#f3f4f6_1px,transparent_1px)] [background-size:20px_20px]">
+                    <!-- Messages will be injected here -->
+                </div>
+
+                <div class="p-4 bg-white border-t border-gray-100">
+                    <form id="chat-form"
+                        class="flex gap-3 bg-gray-50 p-2 rounded-2xl border border-gray-200 focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all duration-300">
+                        <input type="text" id="chat-input"
+                            class="flex-1 bg-transparent px-4 py-2 text-sm outline-none font-medium"
+                            placeholder="Ask about balance, payout, or apply for leave...">
+                        <button type="button" id="mic-btn"
+                            class="text-gray-400 hover:text-indigo-600 w-10 h-10 rounded-xl transition-all flex items-center justify-center">
+                            <i class="fas fa-microphone text-lg"></i>
+                        </button>
+                        <button type="submit" id="send-btn"
+                            class="bg-indigo-600 text-white w-10 h-10 rounded-xl hover:bg-indigo-700 transition-all flex items-center justify-center shadow-lg transform hover:scale-105 active:scale-95">
+                            <i class="fas fa-paper-plane text-sm"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Voice AI Overlay -->
+    <div id="voice-overlay">
+        <div class="relative w-32 h-32 flex items-center justify-center mb-8">
+            <div class="voice-ring" style="animation-delay: 0s;"></div>
+            <div class="voice-ring" style="animation-delay: 0.5s;"></div>
+            <div class="voice-ring" style="animation-delay: 1s;"></div>
+            <div class="w-20 h-20 bg-indigo-600 rounded-full flex items-center justify-center shadow-2xl z-10">
+                <i class="fas fa-microphone text-white text-3xl"></i>
+            </div>
+        </div>
+        <h2 class="text-2xl font-black text-gray-800 mb-2">Listening...</h2>
+        <p class="text-gray-400 font-medium">Say "What is my salary?"</p>
+        <button onclick="stopListening()"
+            class="mt-8 px-6 py-2 bg-red-50 text-red-600 rounded-full text-xs font-bold hover:bg-red-100 transition-all">Cancel</button>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.error('No session token found, redirecting to login');
+            window.location.href = '/index.html';
+        }
+
+        async function init(isInitialLoad = false) {
+            try {
+                console.log('Initializing Dashboard (Initial Load:', isInitialLoad, ')...');
+                const meResp = await fetch('/api/me', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!meResp.ok) throw new Error('Session expired');
+                const me = await meResp.json();
+
+                document.getElementById('user-display-name').textContent = me.username;
+                console.log('User identified:', me.username);
+
+                // Fetch dynamic employee data based on logged-in user
+                const empId = me.employee_details ? me.employee_details.id : 21;
+                const dataResp = await fetch(`/api/employee/${empId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!dataResp.ok) throw new Error('Data fetch failed');
+                const data = await dataResp.json();
+
+                // Store globally for the modal
+                window.employeeData = data;
+
+                const profile = data.profile || {};
+                if (isInitialLoad) {
+                    if (profile.name) {
+                        // Update header display name with full name
+                        document.getElementById('user-display-name').textContent = profile.name;
+
+                        // Add personalized formal greeting
+                        addMessage(`Greetings, ${profile.name}. I am your AI HR Assistant. I can assist with leave applications, payroll inquiries, and company policies. How may I help you today?`, 'bot');
+                    } else {
+                        addMessage("Greetings. I am your AI HR Assistant. I can assist with leave applications, payroll inquiries, and company policies. How may I help you today?", 'bot');
+                    }
+                }
+                console.log('Dashboard data loaded successfully');
+
+            } catch (e) {
+                console.error('Dashboard Init Critical Error:', e);
+                // alert('Session issue: ' + e.message); 
+                // logout(); 
+            }
+        }
+
+        function openProfileModal() {
+            if (!window.employeeData) return;
+            const profile = window.employeeData.profile || {};
+            const balance = window.employeeData.leave_balance || {};
+            const payroll = window.employeeData.latest_payroll || {};
+
+            // Map data to DOM
+            document.getElementById('modal-name').textContent = profile.name || '--';
+            document.getElementById('modal-role').textContent = profile.position || '--';
+            document.getElementById('modal-dept').textContent = profile.department || '--';
+            document.getElementById('modal-id').textContent = '#' + (profile.id || '--');
+            document.getElementById('modal-salary').textContent = profile.salary ? '₹' + profile.salary.toLocaleString('en-IN') : '--';
+            document.getElementById('modal-email').textContent = profile.email || '--';
+            document.getElementById('modal-join-date').textContent = profile.join_date || '--';
+
+            // Initials
+            const initials = (profile.name || '??').split(' ').filter(n => n).map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            document.getElementById('modal-initials').textContent = initials;
+
+            // Performance
+            const perfEl = document.getElementById('modal-performance');
+            const perf = profile.performance_rating || 'N/A';
+            perfEl.textContent = perf;
+            if (perf === 'Excellent') {
+                perfEl.className = 'px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-bold';
+            } else if (perf === 'Needs Improvement') {
+                perfEl.className = 'px-3 py-1 bg-red-50 text-red-700 rounded-full text-xs font-bold';
+            } else {
+                perfEl.className = 'px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold';
+            }
+
+            // Balance
+            document.getElementById('modal-annual').textContent = balance.annual ?? '--';
+            document.getElementById('modal-sick').textContent = balance.sick ?? '--';
+            document.getElementById('modal-casual').textContent = balance.casual ?? '--';
+
+            // Show modal
+            const modal = document.getElementById('profile-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeProfileModal() {
+            const modal = document.getElementById('profile-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function addMessage(text, role) {
+            const container = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = (role === 'user' ? 'message-user' : 'message-bot') + ' shadow-sm transition-all duration-300 transform translate-y-2';
+            div.textContent = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            requestAnimationFrame(() => div.classList.remove('translate-y-2'));
+        }
+
+        async function handleChat(e) {
+            if (e) e.preventDefault();
+            const chatInput = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('send-btn');
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            console.log('Sending message:', text);
+            addMessage(text, 'user');
+            chatInput.value = '';
+            chatInput.disabled = true;
+            sendBtn.disabled = true;
+
+            try {
+                const resp = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ message: text })
+                });
+
+                if (!resp.ok) throw new Error('API Error');
+                const data = await resp.json();
+
+                addMessage(data.response, 'bot');
+
+                // Speak response if voice is enabled
+                if (document.getElementById('voice-toggle').checked) {
+                    speakResponse(data.response);
+                }
+
+                if (data.action_taken) {
+                    console.log('Action taken by AI, refreshing data...');
+                    // Refresh data but skip the welcome message
+                    setTimeout(() => init(false), 2000);
+                }
+            } catch (e) {
+                console.error('Chat Error:', e);
+                addMessage("I apologize, but I am having trouble connecting to the HR mainframe. Please check your connection.", "bot");
+            } finally {
+                chatInput.disabled = false;
+                sendBtn.disabled = false;
+                chatInput.focus();
+            }
+        }
+
+        // Voice AI Implementation
+        const recognition = 'webkitSpeechRecognition' in window ? new webkitSpeechRecognition() : null;
+        if (recognition) {
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                document.body.classList.add('voice-active');
+            };
+
+            recognition.onresult = (event) => {
+                const text = event.results[0][0].transcript;
+                document.getElementById('chat-input').value = text;
+                stopListening();
+                handleChat();
+            };
+
+            recognition.onerror = (e) => {
+                console.error('Speech recognition error:', e);
+                stopListening();
+            };
+
+            recognition.onend = () => {
+                stopListening();
+            };
+        }
+
+        function startListening() {
+            if (!recognition) {
+                alert('Speech recognition is not supported in this browser.');
+                return;
+            }
+            recognition.start();
+        }
+
+        function stopListening() {
+            if (recognition) recognition.stop();
+            document.body.classList.remove('voice-active');
+        }
+
+        function speakResponse(text) {
+            if (!('speechSynthesis' in window)) return;
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+
+            // Clean text and handle placeholders
+            // Adding commas after Year and Month creates a natural "slow and steady" pause without robotic gaps
+            const cleanedText = text
+                .replace(/[*_#`~]/g, '')
+                .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Keep link text, remove URL
+                .replace(/\bYYYY\b/gi, 'Year,')
+                .replace(/\bMM\b/gi, 'Month,')
+                .replace(/\bDD\b/gi, 'Day')
+                .trim();
+
+            const utterance = new SpeechSynthesisUtterance(cleanedText);
+            const voices = window.speechSynthesis.getVoices();
+            const premiumVoice = voices.find(v => v.name.includes('Google') || v.name.includes('Premium')) || voices[0];
+            if (premiumVoice) utterance.voice = premiumVoice;
+
+            utterance.pitch = 1.0;
+            utterance.rate = 1.0; // Normal human speed
+            window.speechSynthesis.speak(utterance);
+        }
+
+        const micBtn = document.getElementById('mic-btn');
+        if (micBtn) {
+            micBtn.onclick = startListening;
+        }
+
+        const chatForm = document.getElementById('chat-form');
+        if (chatForm) {
+            chatForm.onsubmit = handleChat;
+        }
+
+        function logout() {
+            console.log('Logging out...');
+            localStorage.removeItem('token');
+            window.location.href = '/index.html';
+        }
+
+        // Run on load with initial message
+        window.addEventListener('DOMContentLoaded', () => init(true));
+    </script>
+
+    <!-- Profile Modal (Self) -->
+    <div id="profile-modal"
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] hidden items-center justify-center p-4 transition-opacity">
+        <div
+            class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative border border-white/20 ring-1 ring-black/5">
+            <!-- Close Button -->
+            <button onclick="closeProfileModal()"
+                class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 transition-colors z-10">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xs font-black text-indigo-400 uppercase tracking-widest"><i
+                            class="fas fa-id-badge mr-2"></i>Employee Profile</h2>
+                </div>
+
+                <!-- Header / Avatar -->
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-16 h-16 bg-indigo-50 border-2 border-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 text-2xl font-black shadow-inner"
+                        id="modal-initials">--</div>
+                    <div>
+                        <h3 class="text-xl font-black text-gray-800 leading-tight" id="modal-name">Loading...</h3>
+                        <p class="text-xs text-gray-500 font-bold uppercase" id="modal-role">--</p>
+                    </div>
+                </div>
+
+                <!-- Info Grid -->
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Email
+                            Address</span>
+                        <span id="modal-email" class="text-sm font-bold text-gray-700">--</span>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Start
+                            Date</span>
+                        <span id="modal-join-date" class="text-sm font-bold text-gray-700">--</span>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <span
+                            class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Department</span>
+                        <span id="modal-dept" class="text-sm font-bold text-gray-700">--</span>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Employee
+                            ID</span>
+                        <span id="modal-id" class="text-sm font-bold text-gray-700">--</span>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Base
+                            Salary</span>
+                        <span id="modal-salary" class="text-sm font-bold text-gray-700">--</span>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <span
+                            class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Performance</span>
+                        <span id="modal-performance"
+                            class="inline-block px-2 py-1 bg-gray-200 text-gray-600 rounded-md text-[10px] font-bold mt-1">--</span>
+                    </div>
+                </div>
+
+                <!-- Leave Entitlements -->
+                <div class="border-t border-gray-100 pt-6">
+                    <h4
+                        class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <i class="fas fa-calendar-alt text-indigo-400"></i> Leave Entitlements
+                    </h4>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-indigo-600/5 p-3 rounded-xl border border-indigo-600/10 text-center">
+                            <p class="text-2xl font-black text-indigo-600" id="modal-annual">--</p>
+                            <p class="text-[9px] font-black text-indigo-400 uppercase mt-1">Annual Days</p>
+                        </div>
+                        <div class="bg-amber-600/5 p-3 rounded-xl border border-amber-600/10 text-center">
+                            <p class="text-2xl font-black text-amber-600" id="modal-sick">--</p>
+                            <p class="text-[9px] font-black text-amber-400 uppercase mt-1">Medical Days</p>
+                        </div>
+                        <div class="bg-emerald-600/5 p-3 rounded-xl border border-emerald-600/10 text-center">
+                            <p class="text-2xl font-black text-emerald-600" id="modal-casual">--</p>
+                            <p class="text-[9px] font-black text-emerald-400 uppercase mt-1">Personal Days</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
+```

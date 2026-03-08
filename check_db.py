@@ -1,0 +1,15 @@
+import sqlite3
+import os
+
+db_path = r'd:\Design Project\AI as HR Manager (Anti-G)\data\hr_database.db'
+if not os.path.exists(db_path):
+    print(f"DB not found at {db_path}")
+else:
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, position, salary FROM employees ORDER BY id DESC LIMIT 5")
+    rows = cursor.fetchall()
+    print("Latest 5 employees:")
+    for row in rows:
+        print(f"ID={row[0]}, Name={row[1]}, Position={row[2]}, Salary={row[3]}")
+    conn.close()

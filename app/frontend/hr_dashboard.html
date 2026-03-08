@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Admin Dashboard - AI HR Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body {
+            background-color: var(--bg-dark);
+        }
+
+        .dashboard-card {
+            background: white;
+            border: 1px solid var(--glass-border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+    <nav class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-2">
+            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                <i class="fas fa-user-shield text-xl"></i>
+            </div>
+            <h1 class="text-xl font-bold text-gray-800 tracking-tight">HR Control Panel</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <button onclick="openStatusModal()"
+                class="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors mr-2">
+                <span class="relative flex h-2 w-2">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                <span class="text-[10px] font-black uppercase tracking-widest">System Status</span>
+            </button>
+            <span id="user-name" class="font-semibold text-gray-600 text-sm">Loading Admin...</span>
+            <button onclick="logout()" class="text-gray-400 hover:text-red-600 transition-colors">
+                <i class="fas fa-sign-out-alt text-lg"></i>
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-6 space-y-8">
+        <!-- Hidden Stats (Relocated) -->
+
+        <div class="dashboard-card shadow-sm border border-gray-100">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-address-book text-indigo-500"></i> Employee Directory
+                </h2>
+                <button onclick="openAddModal()"
+                    class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200 text-xs font-bold">
+                    <i class="fas fa-plus"></i> Add Employee
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-[10px] font-bold text-gray-400 uppercase border-b border-gray-100">
+                            <th class="py-4 px-4">Employee Name</th>
+                            <th class="py-4 px-4">Designation</th>
+                            <th class="py-4 px-4">Department</th>
+                            <th class="py-4 px-4">Performance</th>
+                            <th class="py-4 px-4">Status</th>
+                            <th class="py-4 px-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employee-list" class="text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="dashboard-card">
+            <h2 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <i class="fas fa-history text-indigo-500"></i> Quality Monitoring (Real-time AI Logs)
+            </h2>
+            <div id="chat-logs" class="space-y-4"></div>
+        </div>
+    </main>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/index.html';
+
+        async function init() {
+            try {
+                const me = await fetch('/api/me', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json());
+                document.getElementById('user-name').textContent = me.username.toUpperCase();
+
+                const employees = await fetch('/api/hr/employees', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }).then(r => r.json());
+
+                document.getElementById('stat-count').textContent = employees.length;
+                const list = document.getElementById('employee-list');
+                list.innerHTML = employees.map(emp => `
+                    <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                        <td class="py-4 px-4 font-bold text-gray-800">${emp.name}</td>
+                        <td class="py-4 px-4 text-gray-500">${emp.position}</td>
+                        <td class="py-4 px-4 text-gray-500">${emp.department}</td>
+                        <td class="py-4 px-4">
+                            <span class="px-3 py-1 bg-${emp.performance_rating === 'Excellent' ? 'green' : emp.performance_rating === 'Needs Improvement' ? 'red' : 'blue'}-50 text-${emp.performance_rating === 'Excellent' ? 'green' : emp.performance_rating === 'Needs Improvement' ? 'red' : 'blue'}-700 rounded-full text-[10px] font-bold">${emp.performance_rating || 'N/A'}</span>
+                        </td>
+                        <td class="py-4 px-4">
+                            <span class="px-3 py-1 bg-${emp.leave_status === 'On Leave' ? 'amber' : 'green'}-50 text-${emp.leave_status === 'On Leave' ? 'amber' : 'green'}-700 rounded-full text-[10px] font-bold uppercase">${emp.leave_status || 'ACTIVE'}</span>
+                        </td>
+                        <td class="py-4 px-4 text-right">
+                            <button onclick="openProfileModal(${emp.id})" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold px-4 py-2 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors shadow-sm">
+                                <i class="fas fa-eye mr-1"></i> View
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                const logs = await fetch('/api/hr/logs', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }).then(r => r.json());
+                document.getElementById('stat-queries').textContent = logs.length;
+                const logContainer = document.getElementById('chat-logs');
+                logContainer.innerHTML = logs.map(log => `
+                    <div class="p-5 border border-gray-100 rounded-2xl bg-slate-50/30">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-bold text-indigo-600 text-xs">Emp ID: ${log.employee_id} (@${log.username})</span>
+                            <span class="text-[10px] font-bold text-gray-300 uppercase">${new Date(log.timestamp).toLocaleTimeString()}</span>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-gray-100 mb-4 text-sm text-gray-700 shadow-sm font-medium italic">"${log.message}"</div>
+                        <div class="flex gap-3 items-start">
+                            <div class="w-6 h-6 bg-indigo-600 rounded-lg flex items-center justify-center text-white flex-shrink-0"><i class="fas fa-robot text-[10px]"></i></div>
+                            <div class="text-sm text-gray-600 leading-relaxed">${log.response}</div>
+                        </div>
+                    </div>
+                `).join('') || '<div class="text-center py-10 text-gray-400 text-sm font-medium">No system communication logs found yet.</div>';
+            } catch (e) { console.error('HR Init error:', e); }
+        }
+
+        function openAddModal() {
+            document.getElementById('add-modal').classList.remove('hidden');
+            document.getElementById('add-modal').classList.add('flex');
+        }
+
+        function closeAddModal() {
+            document.getElementById('add-modal').classList.add('hidden');
+            document.getElementById('add-modal').classList.remove('flex');
+        }
+
+        async function submitAddEmployee(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.from_entries(formData.entries());
+            data.salary = parseInt(data.salary);
+
+            const resp = await fetch('/api/employee', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(data)
+            });
+
+            if (resp.ok) {
+                closeAddModal();
+                init();
+            } else {
+                alert('Error adding employee');
+            }
+        }
+
+        let currentEditingId = null;
+
+        function toggleEditMode(edit) {
+            const displayElements = document.querySelectorAll('.modal-display');
+            const editElements = document.querySelectorAll('.modal-edit');
+            const saveBtn = document.getElementById('modal-save-btn');
+            const editBtn = document.getElementById('modal-edit-toggle-btn');
+
+            if (edit) {
+                displayElements.forEach(el => el.classList.add('hidden'));
+                editElements.forEach(el => el.classList.remove('hidden'));
+                saveBtn.classList.remove('hidden');
+                editBtn.classList.add('hidden');
+            } else {
+                displayElements.forEach(el => el.classList.remove('hidden'));
+                editElements.forEach(el => el.classList.add('hidden'));
+                saveBtn.classList.add('hidden');
+                editBtn.classList.remove('hidden');
+            }
+        }
+
+        async function saveEmployeeChanges() {
+            const data = {
+                name: document.getElementById('edit-name').value,
+                position: document.getElementById('edit-role').value,
+                department: document.getElementById('edit-dept').value,
+                salary: parseInt(document.getElementById('edit-salary').value),
+                performance_rating: document.getElementById('edit-performance').value,
+                email: document.getElementById('edit-email').value,
+                join_date: document.getElementById('edit-join-date').value
+            };
+
+            const resp = await fetch(`/api/employee/${currentEditingId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(data)
+            });
+
+            if (resp.ok) {
+                toggleEditMode(false);
+                openProfileModal(currentEditingId); // Refresh modal view
+                init(); // Refresh dashboard list
+            } else {
+                alert('Error saving changes');
+            }
+        }
+
+        async function deleteEmployee() {
+            if (!confirm("Are you sure you want to PERMANENTLY delete this employee? This action cannot be undone.")) return;
+
+            const resp = await fetch(`/api/employee/${currentEditingId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (resp.ok) {
+                closeProfileModal();
+                init();
+            } else {
+                alert('Error deleting employee');
+            }
+        }
+
+        function openStatusModal() {
+            document.getElementById('status-modal').classList.remove('hidden');
+            document.getElementById('status-modal').classList.add('flex');
+        }
+
+        function closeStatusModal() {
+            document.getElementById('status-modal').classList.add('hidden');
+            document.getElementById('status-modal').classList.remove('flex');
+        }
+
+        async function openProfileModal(empId) {
+            try {
+                // Show modal overlay and loading state
+                const modal = document.getElementById('profile-modal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                toggleEditMode(false);
+                currentEditingId = empId;
+
+                // Fetch data
+                const data = await fetch(`/api/employee/${empId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }).then(r => r.json());
+
+                const profile = data.profile || {};
+                const balance = data.leave_balance || {};
+
+                // Map data to DOM
+                document.getElementById('modal-name').textContent = profile.name || '--';
+                document.getElementById('modal-role').textContent = profile.position || '--';
+                document.getElementById('modal-dept').textContent = profile.department || '--';
+                document.getElementById('modal-id').textContent = '#' + (profile.id || '--');
+                document.getElementById('modal-salary').textContent = profile.salary ? '₹' + profile.salary.toLocaleString('en-IN') : '--';
+                document.getElementById('modal-email').textContent = profile.email || '--';
+                document.getElementById('modal-join-date').textContent = profile.join_date || '--';
+                document.getElementById('modal-performance').textContent = profile.performance_rating || '--';
+
+                // Set edit values
+                document.getElementById('edit-name').value = profile.name || '';
+                document.getElementById('edit-role').value = profile.position || '';
+                document.getElementById('edit-dept').value = profile.department || '';
+                document.getElementById('edit-salary').value = profile.salary || 0;
+                document.getElementById('edit-performance').value = profile.performance_rating || 'Satisfactory';
+                document.getElementById('edit-email').value = profile.email || '';
+                document.getElementById('edit-join-date').value = profile.join_date || '';
+
+                // Initials
+                const initials = (profile.name || '??').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                document.getElementById('modal-initials').textContent = initials;
+
+                // Performance
+                const perfEl = document.getElementById('modal-performance');
+                const perf = profile.performance_rating || 'N/A';
+                perfEl.textContent = perf;
+                if (perf === 'Excellent') {
+                    perfEl.className = 'px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-bold';
+                } else if (perf === 'Needs Improvement') {
+                    perfEl.className = 'px-3 py-1 bg-red-50 text-red-700 rounded-full text-xs font-bold';
+                } else {
+                    perfEl.className = 'px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold';
+                }
+
+                // Balance
+                document.getElementById('modal-annual').textContent = balance.annual ?? '--';
+                document.getElementById('modal-sick').textContent = balance.sick ?? '--';
+
+            } catch (e) {
+                console.error("Error loading profile:", e);
+                alert("Failed to load employee profile.");
+                closeProfileModal();
+            }
+        }
+
+        function closeProfileModal() {
+            const modal = document.getElementById('profile-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function logout() { localStorage.removeItem('token'); window.location.href = '/index.html'; }
+        init();
+    </script>
+
+    <!-- Profile Modal -->
+    <div id="profile-modal"
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-opacity">
+        <div
+            class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative border border-white/20 ring-1 ring-black/5">
+            <!-- Close Button -->
+            <button onclick="closeProfileModal()"
+                class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 transition-colors z-10">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="p-6">
+                <!-- Header / Avatar -->
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-16 h-16 bg-indigo-50 border-2 border-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 text-2xl font-black shadow-inner"
+                        id="modal-initials">--</div>
+                    <div>
+                        <h3 class="text-xl font-black text-gray-800 leading-tight modal-display" id="modal-name">
+                            Loading...</h3>
+                        <input type="text" id="edit-name"
+                            class="w-full bg-white border border-gray-200 rounded-lg p-1 text-lg modal-edit hidden font-black">
+                        <p class="text-xs text-gray-500 font-bold uppercase modal-display" id="modal-role">--</p>
+                        <input type="text" id="edit-role"
+                            class="w-full bg-white border border-gray-200 rounded-lg p-1 text-[10px] modal-edit hidden font-bold uppercase mt-1">
+                    </div>
+                </div>
+
+                <!-- Info Grid -->
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Email
+                            Address</span>
+                        <span id="modal-email" class="text-sm font-bold text-gray-700 modal-display">--</span>
+                        <input type="email" id="edit-email"
+                            class="w-full bg-white border border-gray-200 rounded-lg p-1 text-sm modal-edit hidden font-bold">
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Start
+                            Date</span>
+                        <span id="modal-join-date" class="text-sm font-bold text-gray-700 modal-display">--</span>
+                        <input type="date" id="edit-join-date"
+                            class="w-full bg-white border border-gray-200 rounded-lg p-1 text-sm modal-edit hidden font-bold">
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <span
+                            class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Department</span>
+                        <span id="modal-dept" class="text-sm font-bold text-gray-700 modal-display">--</span>
+                        <select id="edit-dept"
+                            class="w-full bg-white border border-gray-200 rounded-lg p-1 text-sm modal-edit hidden font-bold">
+                            <option>Engineering</option>
+                            <option>Product</option>
+                            <option>Design</option>
+                            <option>Marketing</option>
+                            <option>Sales</option>
+                            <option>HR</option>
+                            <option>Finance</option>
+                            <option>Operations</option>
+                        </select>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Employee
+                            ID</span>
+                        <span id="modal-id" class="text-sm font-bold text-gray-700">--</span>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Base
+                            Salary</span>
+                        <span id="modal-salary" class="text-sm font-bold text-gray-700 modal-display">--</span>
+                        <input type="number" id="edit-salary"
+                            class="w-full bg-white border border-gray-200 rounded-lg p-1 text-sm modal-edit hidden font-bold">
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <span
+                            class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Performance</span>
+                        <span id="modal-performance"
+                            class="inline-block px-2 py-1 bg-gray-200 text-gray-600 rounded-md text-[10px] font-bold mt-1 modal-display">--</span>
+                        <select id="edit-performance"
+                            class="w-full bg-white border border-gray-200 rounded-lg p-1 text-xs modal-edit hidden font-bold mt-1">
+                            <option>Excellent</option>
+                            <option>Good</option>
+                            <option>Satisfactory</option>
+                            <option>Needs Improvement</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Admin Action Buttons -->
+                <div class="flex gap-2 mb-6">
+                    <button id="modal-edit-toggle-btn" onclick="toggleEditMode(true)"
+                        class="flex-1 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors">
+                        <i class="fas fa-edit mr-2"></i> Edit Record
+                    </button>
+                    <button id="modal-save-btn" onclick="saveEmployeeChanges()"
+                        class="flex-1 py-2 bg-green-600 text-white rounded-xl text-xs font-bold hover:bg-green-700 transition-colors hidden">
+                        <i class="fas fa-save mr-2"></i> Save Changes
+                    </button>
+                    <button onclick="deleteEmployee()"
+                        class="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+
+                <!-- Leave Entitlements -->
+                <div class="border-t border-gray-100 pt-6">
+                    <h4
+                        class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <i class="fas fa-calendar-alt text-indigo-400"></i> Leave Entitlements
+                    </h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-indigo-600/5 p-4 rounded-xl border border-indigo-600/10 text-center">
+                            <p class="text-2xl font-black text-indigo-600" id="modal-annual">--</p>
+                            <p class="text-[9px] font-black text-indigo-400 uppercase mt-1">Annual Days</p>
+                        </div>
+                        <div class="bg-amber-600/5 p-4 rounded-xl border border-amber-600/10 text-center">
+                            <p class="text-2xl font-black text-amber-600" id="modal-sick">--</p>
+                            <p class="text-[9px] font-black text-amber-400 uppercase mt-1">Medical Days</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Add Employee Modal -->
+    <div id="add-modal"
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative border border-white/20">
+            <button onclick="closeAddModal()"
+                class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+            <form onsubmit="submitAddEmployee(event)" class="p-8">
+                <h2 class="text-xl font-black text-gray-800 mb-6 flex items-center gap-2">
+                    <i class="fas fa-user-plus text-indigo-500"></i> Register New Employee
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Full
+                            Name</label>
+                        <input type="text" name="name" required
+                            class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label
+                                class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Position</label>
+                            <input type="text" name="position" required
+                                class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 text-sm font-bold">
+                        </div>
+                        <div>
+                            <label
+                                class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Department</label>
+                            <select name="department"
+                                class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 text-sm font-bold">
+                                <option>Engineering</option>
+                                <option>Product</option>
+                                <option>Design</option>
+                                <option>Marketing</option>
+                                <option>Sales</option>
+                                <option>HR</option>
+                                <option>Finance</option>
+                                <option>Operations</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Email
+                            Address</label>
+                        <input type="email" name="email" required
+                            class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 text-sm font-bold">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Base
+                                Salary</label>
+                            <input type="number" name="salary" required
+                                class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Join
+                                Date</label>
+                            <input type="date" name="join_date" required
+                                class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 text-sm font-bold">
+                        </div>
+                    </div>
+                    <button type="submit"
+                        class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 mt-4">
+                        <i class="fas fa-check-circle mr-2"></i> Confirm Onboarding
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- System Status Modal -->
+    <div id="status-modal"
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] hidden items-center justify-center p-4 transition-opacity">
+        <div
+            class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden relative border border-white/20 ring-1 ring-black/5">
+            <button onclick="closeStatusModal()"
+                class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 transition-colors z-10">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="p-6">
+                <div class="mb-6">
+                    <h2 class="text-xs font-black text-green-500 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fas fa-server"></i> System Health Overview
+                    </h2>
+                </div>
+                <div class="space-y-4">
+                    <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex justify-between items-center">
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Total
+                                Employees</span>
+                            <span id="stat-count" class="text-xl font-black text-gray-800">--</span>
+                        </div>
+                        <i class="fas fa-users text-indigo-200 text-2xl"></i>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex justify-between items-center">
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">AI Active
+                                Sessions</span>
+                            <span id="stat-queries" class="text-xl font-black text-gray-800">--</span>
+                        </div>
+                        <i class="fas fa-robot text-green-200 text-2xl"></i>
+                    </div>
+                    <div class="p-4 bg-green-50 rounded-2xl border border-green-100 flex justify-between items-center">
+                        <div>
+                            <span
+                                class="text-[10px] font-bold text-green-700 uppercase tracking-widest block">Diagnostic
+                                Pulse</span>
+                            <span class="text-sm font-black text-green-600">HEALTHY / NOMINAL</span>
+                        </div>
+                        <div
+                            class="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
