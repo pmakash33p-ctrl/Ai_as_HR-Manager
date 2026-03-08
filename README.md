@@ -48,7 +48,7 @@ Open your browser and go to:
 ## Default Login Credentials
 - **HR Admin Portal**:
   - Username: `admin`
-  - Password: `hr123`
+  - Password: `welcome123`
 - **Employee Portal**:
   - Username: Use any username from [employee_credentials.txt](file:///d:/Design%20Project/AI%20as%20HR%20Manager%20(Anti-G)/employee_credentials.txt)
   - Password: `welcome123`
