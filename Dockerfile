@@ -15,4 +15,4 @@ COPY . .
 EXPOSE 8000
 
 # Start your app: Seed the DB, then Seed Users, then start the Backend
-CMD python data/seed_db.py && python seed_users.py && python app/backend/main.py
+CMD rm -f data/hr_database.db && python data/seed_db.py && python seed_users.py && python app/backend/main.py
