@@ -32,6 +32,15 @@ app.add_middleware(
 db = HRDatabase()
 llm = LLMService()
 
+# Cache control middleware to prevent stale frontend issues
+@app.middleware("http")
+async def add_cache_control_header(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 # Auth setup
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 

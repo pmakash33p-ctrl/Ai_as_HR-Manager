@@ -300,6 +300,7 @@
                 // Balance
                 document.getElementById('modal-annual').textContent = balance.annual ?? '--';
                 document.getElementById('modal-sick').textContent = balance.sick ?? '--';
+                document.getElementById('modal-casual').textContent = balance.casual ?? '--';
 
             } catch (e) {
                 console.error("Error loading profile:", e);
@@ -426,14 +427,18 @@
                         class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                         <i class="fas fa-calendar-alt text-indigo-400"></i> Leave Entitlements
                     </h4>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-indigo-600/5 p-4 rounded-xl border border-indigo-600/10 text-center">
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-indigo-600/5 p-3 rounded-xl border border-indigo-600/10 text-center">
                             <p class="text-2xl font-black text-indigo-600" id="modal-annual">--</p>
                             <p class="text-[9px] font-black text-indigo-400 uppercase mt-1">Annual Days</p>
                         </div>
-                        <div class="bg-amber-600/5 p-4 rounded-xl border border-amber-600/10 text-center">
+                        <div class="bg-amber-600/5 p-3 rounded-xl border border-amber-600/10 text-center">
                             <p class="text-2xl font-black text-amber-600" id="modal-sick">--</p>
                             <p class="text-[9px] font-black text-amber-400 uppercase mt-1">Medical Days</p>
+                        </div>
+                        <div class="bg-emerald-600/5 p-3 rounded-xl border border-emerald-600/10 text-center">
+                            <p class="text-2xl font-black text-emerald-600" id="modal-casual">--</p>
+                            <p class="text-[9px] font-black text-emerald-400 uppercase mt-1">Personal Days</p>
                         </div>
                     </div>
                 </div>
