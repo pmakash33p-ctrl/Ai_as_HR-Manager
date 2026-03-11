@@ -1,15 +1,25 @@
 import sqlite3
 import os
 
-db_path = os.path.join(os.getcwd(), 'data', 'hr_database.db')
+# Get database path dynamically
+base_dir = os.path.dirname(os.path.abspath(__file__))
+db_path = os.path.join(base_dir, "data", "hr_database.db")
+
 if not os.path.exists(db_path):
     print(f"DB not found at {db_path}")
 else:
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute("SELECT username, role FROM users")
+    
+    # Fetch username, role, and password hash (if exists)
+    cursor.execute("SELECT username, role, password FROM users")
     rows = cursor.fetchall()
-    print("Users in DB:")
-    for row in rows:
-        print(row)
+    
+    if rows:
+        print("Users in database:")
+        for row in rows:
+            print(f"Username: {row[0]}, Role: {row[1]}, Password Hash: {row[2]}")
+    else:
+        print("No users found in the database.")
+    
     conn.close()

@@ -1,5 +1,5 @@
 import sqlite3
-from auth import verify_password, get_password_hash
+from app.backend.auth import verify_password, get_password_hash
 import os
 import logging
 
@@ -7,12 +7,14 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# In app/backend/db_service.py
 class HRDatabase:
     def __init__(self, db_path=None):
         if db_path is None:
-            # Root data directory for consistent app-wide access
-            base_dir = os.getcwd()
+            # Pointing to the root 'data' folder
+            base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
             self.db_path = os.path.join(base_dir, "data", "hr_database.db")
+            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         else:
             self.db_path = db_path
         
@@ -20,12 +22,14 @@ class HRDatabase:
         # Ensure users table exists
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
+        cursor.execute("PRAGMA foreign_keys = ON")
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
-                role TEXT NOT NULL CHECK (role IN ('hr','employee'))
+                role TEXT NOT NULL CHECK (role IN ('hr','employee')),
+                employee_id INTEGER
             );
         ''')
         cursor.execute('''

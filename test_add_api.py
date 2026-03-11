@@ -32,7 +32,7 @@ print(f"Add response: {add_resp.text}")
 # 3. Verify in DB
 import sqlite3
 import os
-db_path = r'd:\Design Project\AI as HR Manager (Anti-G)\data\hr_database.db'
+db_path = os.path.join(os.getcwd(), "data", "hr_database.db")
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 cursor.execute("SELECT id, name FROM employees WHERE name='Manual Test Employee'")

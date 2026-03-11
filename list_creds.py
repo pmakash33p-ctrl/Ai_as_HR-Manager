@@ -1,7 +1,8 @@
 import sqlite3
 import os
 
-db_path = r'd:\Design Project\AI as HR Manager (Anti-G)\data\hr_database.db'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+db_path = os.path.join(BASE_DIR, "data", "hr_database.db")
 
 def list_creds():
     conn = sqlite3.connect(db_path)

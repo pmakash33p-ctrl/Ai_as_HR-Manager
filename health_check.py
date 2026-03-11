@@ -4,7 +4,7 @@ import time
 import os
 
 def test_system():
-    url = "http://localhost:8000"
+    url = os.getenv("API_URL", "http://localhost:8000")
     emp_id = 1
     
     print(f"--- AI HR Manager Health Check ---")

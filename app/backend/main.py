@@ -9,9 +9,9 @@ import logging
 import os
 from datetime import datetime
 
-from db_service import HRDatabase
-from llm_service import LLMService
-from auth import create_access_token, decode_access_token, verify_password
+from app.backend.db_service import HRDatabase
+from app.backend.llm_service import LLMService
+from app.backend.auth import create_access_token, decode_access_token, verify_password
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -214,4 +214,10 @@ app.mount("/", StaticFiles(directory=frontend_path, html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 10000))
+
+    uvicorn.run(
+        "app.backend.main:app",
+        host="0.0.0.0",
+        port=port
+    )

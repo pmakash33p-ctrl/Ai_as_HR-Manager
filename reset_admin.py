@@ -4,7 +4,7 @@ import sys
 
 # Add backend to path to import auth
 sys.path.append(os.path.join(os.getcwd(), 'app', 'backend'))
-from auth import get_password_hash
+from app.backend.auth import get_password_hash
 
 db_path = os.path.join(os.getcwd(), "data", "hr_database.db")
 conn = sqlite3.connect(db_path)

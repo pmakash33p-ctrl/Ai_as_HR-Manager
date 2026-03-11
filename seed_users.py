@@ -1,48 +1,30 @@
 import sqlite3
 import sys
 import os
-# Add the directory containing auth.py to sys.path
 sys.path.append(os.path.join(os.getcwd(), "app", "backend"))
-from auth import get_password_hash
+from app.backend.auth import get_password_hash
 
 def seed():
-    # Consistent database path in the root 'data' directory
-    os.makedirs("data", exist_ok=True)
     db_path = os.path.join(os.getcwd(), "data", "hr_database.db")
-    
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
+
+    # HR Admin
+    admin_hash = get_password_hash("hr123")
+    cursor.execute("INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)", 
+                   ("admin", admin_hash, "hr"))
+
+    # Add multiple employees from your list
+    employee_list = [("john", "welcome123", 21), ("jane", "welcome123", 56), ("susan", "welcome123", 122)]
     
-    # Create users table if not exists (redundant but safe)
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            role TEXT NOT NULL CHECK (role IN ('hr','employee'))
-        );
-    ''')
-
-    # Add HR user
-    hr_pass = get_password_hash("hr123")
-    try:
-        cursor.execute("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)", 
-                       ("admin", hr_pass, "hr"))
-        print("Added HR user: admin / hr123")
-    except sqlite3.IntegrityError:
-        print("HR user already exists")
-
-    # Add Employee user
-    emp_pass = get_password_hash("emp123")
-    try:
-        cursor.execute("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)", 
-                       ("john", emp_pass, "employee"))
-        print("Added Employee user: john / emp123")
-    except sqlite3.IntegrityError:
-        print("Employee user already exists")
+    for username, password, emp_id in employee_list:
+        p_hash = get_password_hash(password)
+        cursor.execute("INSERT OR IGNORE INTO users (username, password_hash, role, employee_id) VALUES (?, ?, ?, ?)", 
+                       (username, p_hash, "employee", emp_id))
 
     conn.commit()
     conn.close()
+    print("User accounts synced with database.")
 
 if __name__ == "__main__":
     seed()

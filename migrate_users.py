@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-db_path = r'd:\Design Project\AI as HR Manager (Anti-G)\data\hr_database.db'
+db_path = os.path.join(os.getcwd(), "data", "hr_database.db")
 
 def migrate():
     if not os.path.exists(db_path):

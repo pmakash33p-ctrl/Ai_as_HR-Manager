@@ -1,7 +1,9 @@
 import sqlite3
 import os
 
-db_path = os.path.join(os.getcwd(), 'data', 'hr_database.db')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+db_path = os.path.join(PROJECT_ROOT, "data", "hr_database.db")
 if not os.path.exists(db_path):
     print(f"DB not found at {db_path}")
 else:
