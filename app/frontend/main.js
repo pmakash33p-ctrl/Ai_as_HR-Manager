@@ -174,6 +174,11 @@ function speak(text) {
     });
 
     const utterance = new SpeechSynthesisUtterance(cleanedText);
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+        utterance.voice = voices[0];
+    }
+    
     utterance.rate = 0.85; // Slower, clear speed
     utterance.pitch = 1.0;
     utterance.volume = 0.8;
