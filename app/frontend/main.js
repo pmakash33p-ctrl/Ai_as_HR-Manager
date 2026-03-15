@@ -165,9 +165,10 @@ function speak(text) {
 
     let cleanedText = text
         .replace(/[*_#`~]/g, '')
-        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+        .replace(/\(YYYY-MM-DD\)/gi, 'Year Month Date');
 
-    // Ensure YYYY-MM-DD is read properly
+    // Ensure actual dates like 2026-03-01 are read properly
     cleanedText = cleanedText.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (match, year, month, day) => {
         const date = new Date(year, parseInt(month) - 1, day);
         return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
