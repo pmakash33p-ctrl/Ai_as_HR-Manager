@@ -166,7 +166,7 @@ function speak(text) {
     let cleanedText = text
         .replace(/[*_#`~]/g, '')
         .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
-        .replace(/\(YYYY-MM-DD\)/gi, 'Year Month Date');
+        .replace(/\(YYYY-MM-DD\)/gi, 'Year, Month, Date');
 
     // Ensure actual dates like 2026-03-01 are read properly
     cleanedText = cleanedText.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (match, year, month, day) => {

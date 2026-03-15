@@ -403,7 +403,7 @@
             let cleanedText = text
                 .replace(/[*_#`~]/g, '')
                 .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Keep link text, remove URL
-                .replace(/\(YYYY-MM-DD\)/gi, 'Year Month Date'); // Spell out literal formatting hints
+                .replace(/\(YYYY-MM-DD\)/gi, 'Year, Month, Date'); // Spell out literal formatting hints with pauses
 
             // Ensure actual dates like 2026-03-01 are read properly (e.g., "March 1, 2026")
             cleanedText = cleanedText.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (match, year, month, day) => {
