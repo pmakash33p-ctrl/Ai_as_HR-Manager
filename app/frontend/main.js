@@ -163,8 +163,18 @@ function speak(text) {
     // Stop any current speech
     window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.0;
+    let cleanedText = text
+        .replace(/[*_#`~]/g, '')
+        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+
+    // Ensure YYYY-MM-DD is read properly
+    cleanedText = cleanedText.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (match, year, month, day) => {
+        const date = new Date(year, parseInt(month) - 1, day);
+        return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    });
+
+    const utterance = new SpeechSynthesisUtterance(cleanedText);
+    utterance.rate = 0.85; // Slower, clear speed
     utterance.pitch = 1.0;
     utterance.volume = 0.8;
 
