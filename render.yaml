@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: ai-hr-manager
+    env: docker
+    region: ohio # Default US region, can be changed
+    plan: free # Use Render's free tier
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 8000

@@ -16,4 +16,4 @@ EXPOSE 8000
 
 # Start your app: Initialize DB, Seed Users, then start the Backend
 # We use a shell to run multiple commands in sequence
-CMD ["sh", "-c", "python data/seed_db.py && python seed_users.py && python app/backend/main.py"]
+CMD ["sh", "-c", "python data/seed_db.py && python seed_users.py && python -m app.backend.main"]

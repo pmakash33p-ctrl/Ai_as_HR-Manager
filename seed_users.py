@@ -3,8 +3,12 @@ import sys
 import os
 sys.path.append(os.path.join(os.getcwd(), "app", "backend"))
 from app.backend.auth import get_password_hash
+from app.backend.db_service import HRDatabase
 
 def seed():
+    # Initialize DB to create tables like 'users'
+    db = HRDatabase()
+
     db_path = os.path.join(os.getcwd(), "data", "hr_database.db")
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
