@@ -18,17 +18,36 @@ def seed():
     cursor.execute("INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)", 
                    ("admin", admin_hash, "hr"))
 
-    # Add multiple employees from your list
-    employee_list = [("john", "welcome123", 21), ("jane", "welcome123", 56), ("susan", "welcome123", 122)]
+    # Fetch all employees to create their accounts dynamically
+    cursor.execute("SELECT id, name FROM employees")
+    employees = cursor.fetchall()
     
-    for username, password, emp_id in employee_list:
-        p_hash = get_password_hash(password)
-        cursor.execute("INSERT OR IGNORE INTO users (username, password_hash, role, employee_id) VALUES (?, ?, ?, ?)", 
-                       (username, p_hash, "employee", emp_id))
+    default_password = get_password_hash("welcome123")
+    accounts_created = 0
+    
+    for emp_id, name in employees:
+        username = name.split()[0].lower() if name else "user"
+        base_username = username
+        counter = 1
+        while True:
+            cursor.execute("SELECT 1 FROM users WHERE username = ?", (username,))
+            if not cursor.fetchone():
+                break
+            username = f"{base_username}{counter}"
+            counter += 1
+
+        try:
+            cursor.execute("""
+                INSERT INTO users (username, password_hash, role, employee_id)
+                VALUES (?, ?, ?, ?)
+            """, (username, default_password, "employee", emp_id))
+            accounts_created += 1
+        except sqlite3.IntegrityError:
+            pass
 
     conn.commit()
     conn.close()
-    print("User accounts synced with database.")
+    print(f"User accounts synced with database. Generated {accounts_created} dynamic employee accounts.")
 
 if __name__ == "__main__":
     seed()
