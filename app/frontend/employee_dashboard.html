@@ -411,10 +411,7 @@
             });
 
             const utterance = new SpeechSynthesisUtterance(cleanedText);
-            const voices = window.speechSynthesis.getVoices();
-            const premiumVoice = voices.find(v => v.name.includes('Google') || v.name.includes('Premium')) || voices[0];
-            if (premiumVoice) utterance.voice = premiumVoice;
-
+            
             utterance.pitch = 1.0;
             utterance.rate = 0.85; // Slower speed for better English comprehension
             window.speechSynthesis.speak(utterance);
